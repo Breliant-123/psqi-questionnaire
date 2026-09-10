@@ -1,0 +1,2687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>睡眠状况调查问卷</title>
+
+
+<!-- Excel导出功能 -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #f5f6f8;
+    font-family: Arial, "Microsoft YaHei", sans-serif;
+    color: #222;
+}
+
+.container {
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+    background: white;
+    min-height: 100vh;
+}
+
+.header {
+    background: #1677ff;
+    color: white;
+    padding: 25px 20px;
+}
+
+.header h1 {
+    margin: 0 0 12px 0;
+    font-size: 23px;
+}
+
+.header p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.content {
+    padding: 20px;
+}
+
+.question {
+    margin-bottom: 30px;
+}
+
+.question-title {
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 1.7;
+    margin-bottom: 12px;
+}
+
+.required {
+    color: red;
+}
+
+input[type="time"],
+input[type="number"],
+input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+.option {
+    display: block;
+    padding: 13px 14px;
+    margin: 8px 0;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.option:hover {
+    background: #f0f6ff;
+}
+
+.option input {
+    margin-right: 8px;
+}
+
+.subquestion {
+    margin-top: 18px;
+    padding: 14px;
+    background: #f7f8fa;
+    border-radius: 8px;
+}
+
+.subquestion-title {
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    background: #1677ff;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #0958d9;
+}
+
+button:disabled {
+    background: #999;
+    cursor: not-allowed;
+}
+
+.result {
+    display: none;
+    margin-top: 35px;
+    padding: 20px;
+    border-radius: 10px;
+    background: #f0f7ff;
+}
+
+.result h2 {
+    text-align: center;
+    margin-top: 0;
+}
+
+.total-score {
+    text-align: center;
+    font-size: 42px;
+    font-weight: bold;
+    color: #1677ff;
+    margin: 20px 0;
+}
+
+.interpretation {
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+.score-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.score-table th,
+.score-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+}
+
+.score-table th {
+    background: #f3f4f6;
+}
+
+.efficiency {
+    margin-top: 15px;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    line-height: 1.7;
+    font-size: 14px;
+}
+
+.reset-button {
+    margin-top: 15px;
+    background: #777;
+}
+
+.reset-button:hover {
+    background: #555;
+}
+
+.export-button {
+    margin-top: 15px;
+    background: #16a34a;
+}
+
+.export-button:hover {
+    background: #15803d;
+}
+
+.notice {
+    margin-top: 12px;
+    color: #777;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+
+/* 数据保存状态 */
+
+.save-status {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 14px;
+    line-height: 1.6;
+    display: none;
+}
+
+.save-success {
+    background: #ecfdf3;
+    color: #15803d;
+}
+
+.save-error {
+    background: #fff1f2;
+    color: #be123c;
+}
+
+.save-loading {
+    background: #f3f4f6;
+    color: #555;
+}
+
+
+/* 前测 / 后测 */
+
+.assessment-box {
+    padding: 14px;
+    background: #f7f8fa;
+    border-radius: 8px;
+}
+
+.assessment-title {
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.assessment-option {
+    display: block;
+    padding: 13px 14px;
+    margin: 8px 0;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.assessment-option:hover {
+    background: #f0f6ff;
+}
+
+.assessment-option input {
+    margin-right: 8px;
+}
+
+
+@media (min-width: 701px) {
+
+    body {
+        padding: 20px 0;
+    }
+
+    .container {
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+<div class="header">
+
+<h1>
+近1个月睡眠状况调查问卷
+</h1>
+
+<p>
+下面一些问题是关于您最近1个月的睡眠状况，
+请根据您近1个月的实际情况，
+选择或填写最符合您实际情况的答案。
+</p>
+
+</div>
+
+
+<div class="content">
+
+
+<form id="questionnaire">
+
+
+<!-- =========================================
+     姓名
+========================================= -->
+
+<div class="question">
+
+<div class="question-title">
+
+姓名
+<span class="required">*</span>
+
+</div>
+
+<input
+type="text"
+name="name"
+id="name"
+placeholder="请输入您的姓名"
+maxlength="50"
+required>
+
+</div>
+
+
+<!-- =========================================
+     测量时间点
+========================================= -->
+
+<div class="question">
+
+<div class="question-title">
+
+测量时间点
+<span class="required">*</span>
+
+</div>
+
+<div class="assessment-box">
+
+<div class="assessment-title">
+请选择本次问卷属于哪一次测量：
+</div>
+
+<label class="assessment-option">
+
+<input
+type="radio"
+name="assessmentType"
+value="pre"
+required>
+
+前测
+
+</label>
+
+
+<label class="assessment-option">
+
+<input
+type="radio"
+name="assessmentType"
+value="post">
+
+后测
+
+</label>
+
+</div>
+
+<div class="notice">
+
+前测：干预措施实施前填写。<br>
+
+后测：干预措施实施完成后填写。
+
+</div>
+
+</div>
+
+
+<!-- 第1题 -->
+
+<div class="question">
+
+<div class="question-title">
+
+1. 近1个月，晚上上床睡觉通常几点钟？
+<span class="required">*</span>
+
+</div>
+
+<input
+type="time"
+name="bedTime"
+id="bedTime"
+required>
+
+</div>
+
+
+<!-- 第2题 -->
+
+<div class="question">
+
+<div class="question-title">
+
+2. 近1个月，从上床到入睡通常需要多少分钟？
+<span class="required">*</span>
+
+</div>
+
+<input
+type="number"
+name="sleepLatency"
+id="sleepLatency"
+min="0"
+max="999"
+placeholder="请输入分钟数"
+required>
+
+</div>
+
+
+<!-- 第3题 -->
+
+<div class="question">
+
+<div class="question-title">
+
+3. 近1个月，通常早上几点起床？
+<span class="required">*</span>
+
+</div>
+
+<input
+type="time"
+name="wakeTime"
+id="wakeTime"
+required>
+
+</div>
+
+
+<!-- 第4题 -->
+
+<div class="question">
+
+<div class="question-title">
+
+4. 近1个月，每夜通常实际睡眠多少小时？
+<span class="required">*</span>
+
+</div>
+
+<input
+type="number"
+name="sleepHours"
+id="sleepHours"
+min="0"
+max="24"
+step="0.1"
+placeholder="例如：6.5"
+required>
+
+<div class="notice">
+
+注意：这里填写的是实际睡眠时间，
+不是躺在床上的时间。
+
+</div>
+
+</div>
+
+
+<!-- 第5题 -->
+
+<div class="question">
+
+<div class="question-title">
+
+5. 近1个月，因下列情况影响睡眠而烦恼？
+<span class="required">*</span>
+
+</div>
+
+
+<!-- 5a -->
+
+<div class="subquestion">
+
+<div class="subquestion-title">
+
+a. 入睡困难（30分钟内不能入睡）
+
+</div>
+
+<label class="option">
+<input type="radio" name="q5a" value="0" required>
+无
+</label>
+
+<label class="option">
+<input type="radio" name="q5a" value="1">
+&lt;1次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5a" value="2">
+1-2次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5a" value="3">
+≥3次/周
+</label>
+
+</div>
+
+
+<!-- 5b -->
+
+<div class="subquestion">
+
+<div class="subquestion-title">
+b. 夜间易醒或早醒
+</div>
+
+<label class="option">
+<input type="radio" name="q5b" value="0" required>
+无
+</label>
+
+<label class="option">
+<input type="radio" name="q5b" value="1">
+&lt;1次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5b" value="2">
+1-2次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5b" value="3">
+≥3次/周
+</label>
+
+</div>
+
+
+<!-- 5c -->
+
+<div class="subquestion">
+
+<div class="subquestion-title">
+c. 夜间去厕所
+</div>
+
+<label class="option">
+<input type="radio" name="q5c" value="0" required>
+无
+</label>
+
+<label class="option">
+<input type="radio" name="q5c" value="1">
+&lt;1次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5c" value="2">
+1-2次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5c" value="3">
+≥3次/周
+</label>
+
+</div>
+
+
+<!-- 5d -->
+
+<div class="subquestion">
+
+<div class="subquestion-title">
+d. 呼吸不畅
+</div>
+
+<label class="option">
+<input type="radio" name="q5d" value="0" required>
+无
+</label>
+
+<label class="option">
+<input type="radio" name="q5d" value="1">
+&lt;1次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5d" value="2">
+1-2次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5d" value="3">
+≥3次/周
+</label>
+
+</div>
+
+
+<!-- 5e -->
+
+<div class="subquestion">
+
+<div class="subquestion-title">
+e. 咳嗽或鼾声高
+</div>
+
+<label class="option">
+<input type="radio" name="q5e" value="0" required>
+无
+</label>
+
+<label class="option">
+<input type="radio" name="q5e" value="1">
+&lt;1次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5e" value="2">
+1-2次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5e" value="3">
+≥3次/周
+</label>
+
+</div>
+
+
+<!-- 5f -->
+
+<div class="subquestion">
+
+<div class="subquestion-title">
+f. 感觉冷
+</div>
+
+<label class="option">
+<input type="radio" name="q5f" value="0" required>
+无
+</label>
+
+<label class="option">
+<input type="radio" name="q5f" value="1">
+&lt;1次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5f" value="2">
+1-2次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5f" value="3">
+≥3次/周
+</label>
+
+</div>
+
+
+<!-- 5g -->
+
+<div class="subquestion">
+
+<div class="subquestion-title">
+g. 感觉热
+</div>
+
+<label class="option">
+<input type="radio" name="q5g" value="0" required>
+无
+</label>
+
+<label class="option">
+<input type="radio" name="q5g" value="1">
+&lt;1次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5g" value="2">
+1-2次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5g" value="3">
+≥3次/周
+</label>
+
+</div>
+
+
+<!-- 5h -->
+
+<div class="subquestion">
+
+<div class="subquestion-title">
+h. 做恶梦
+</div>
+
+<label class="option">
+<input type="radio" name="q5h" value="0" required>
+无
+</label>
+
+<label class="option">
+<input type="radio" name="q5h" value="1">
+&lt;1次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5h" value="2">
+1-2次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5h" value="3">
+≥3次/周
+</label>
+
+</div>
+
+
+<!-- 5i -->
+
+<div class="subquestion">
+
+<div class="subquestion-title">
+i. 疼痛不适
+</div>
+
+<label class="option">
+<input type="radio" name="q5i" value="0" required>
+无
+</label>
+
+<label class="option">
+<input type="radio" name="q5i" value="1">
+&lt;1次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5i" value="2">
+1-2次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5i" value="3">
+≥3次/周
+</label>
+
+</div>
+
+
+<!-- 5j -->
+
+<div class="subquestion">
+
+<div class="subquestion-title">
+j. 其它影响睡眠的事情（如有，请说明）
+</div>
+
+<input
+type="text"
+name="q5j"
+id="q5j"
+placeholder="如无，可不填写">
+
+<div style="margin-top:12px">
+
+<div class="subquestion-title">
+发生频率：
+</div>
+
+<label class="option">
+<input type="radio" name="q5jScore" value="0" required>
+无
+</label>
+
+<label class="option">
+<input type="radio" name="q5jScore" value="1">
+&lt;1次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5jScore" value="2">
+1-2次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q5jScore" value="3">
+≥3次/周
+</label>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- 第6题 -->
+
+<div class="question">
+
+<div class="question-title">
+
+6. 近1个月，总的来说，
+您认为自己的睡眠质量：
+<span class="required">*</span>
+
+</div>
+
+<label class="option">
+<input type="radio" name="q6" value="0" required>
+很好
+</label>
+
+<label class="option">
+<input type="radio" name="q6" value="1">
+较好
+</label>
+
+<label class="option">
+<input type="radio" name="q6" value="2">
+较差
+</label>
+
+<label class="option">
+<input type="radio" name="q6" value="3">
+很差
+</label>
+
+</div>
+
+
+<!-- 第7题 -->
+
+<div class="question">
+
+<div class="question-title">
+
+7. 近1个月，您用药物催眠的情况：
+<span class="required">*</span>
+
+</div>
+
+<label class="option">
+<input type="radio" name="q7" value="0" required>
+无
+</label>
+
+<label class="option">
+<input type="radio" name="q7" value="1">
+&lt;1次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q7" value="2">
+1-2次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q7" value="3">
+≥3次/周
+</label>
+
+</div>
+
+
+<!-- 第8题 -->
+
+<div class="question">
+
+<div class="question-title">
+
+8. 近1个月，您常感到困倦吗？
+<span class="required">*</span>
+
+</div>
+
+<label class="option">
+<input type="radio" name="q8" value="0" required>
+无
+</label>
+
+<label class="option">
+<input type="radio" name="q8" value="1">
+&lt;1次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q8" value="2">
+1-2次/周
+</label>
+
+<label class="option">
+<input type="radio" name="q8" value="3">
+≥3次/周
+</label>
+
+</div>
+
+
+<!-- 第9题 -->
+
+<div class="question">
+
+<div class="question-title">
+
+9. 近1个月，您做事情的精力不足吗？
+<span class="required">*</span>
+
+</div>
+
+<label class="option">
+<input type="radio" name="q9" value="0" required>
+没有
+</label>
+
+<label class="option">
+<input type="radio" name="q9" value="1">
+偶尔有
+</label>
+
+<label class="option">
+<input type="radio" name="q9" value="2">
+有时有
+</label>
+
+<label class="option">
+<input type="radio" name="q9" value="3">
+经常有
+</label>
+
+</div>
+
+
+<button
+type="submit"
+id="submitButton">
+
+提交并计算得分
+
+</button>
+
+
+</form>
+
+
+<!-- =========================
+     结果区域
+========================= -->
+
+<div id="result" class="result">
+
+<h2>
+PSQI评分结果
+</h2>
+
+<div class="total-score">
+
+<span id="totalScore">0</span>
+
+<span style="font-size:18px;">
+/ 21
+</span>
+
+</div>
+
+
+<div id="interpretation" class="interpretation">
+</div>
+
+
+<table class="score-table">
+
+<thead>
+
+<tr>
+
+<th>
+PSQI成分
+</th>
+
+<th>
+得分
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+<td>主观睡眠质量（C1）</td>
+<td id="c1">-</td>
+</tr>
+
+<tr>
+<td>入睡时间（C2）</td>
+<td id="c2">-</td>
+</tr>
+
+<tr>
+<td>睡眠时间（C3）</td>
+<td id="c3">-</td>
+</tr>
+
+<tr>
+<td>睡眠效率（C4）</td>
+<td id="c4">-</td>
+</tr>
+
+<tr>
+<td>睡眠障碍（C5）</td>
+<td id="c5">-</td>
+</tr>
+
+<tr>
+<td>催眠药物（C6）</td>
+<td id="c6">-</td>
+</tr>
+
+<tr>
+<td>日间功能障碍（C7）</td>
+<td id="c7">-</td>
+</tr>
+
+<tr>
+
+<th>
+PSQI总分
+</th>
+
+<th id="tableTotal">
+-
+</th>
+
+</tr>
+
+</tbody>
+
+</table>
+
+
+<div id="efficiencyText" class="efficiency">
+</div>
+
+
+<!-- 数据保存状态 -->
+
+<div
+id="saveStatus"
+class="save-status">
+</div>
+
+
+<!-- Excel导出 -->
+
+<button
+type="button"
+id="exportButton"
+class="export-button"
+onclick="exportExcel()">
+
+导出本次结果 Excel
+
+</button>
+
+
+<button
+type="button"
+class="reset-button"
+onclick="resetForm()">
+
+重新填写
+
+</button>
+
+
+<div class="notice">
+
+说明：本结果仅用于睡眠状况评估。
+PSQI评分不能单独作为临床诊断依据。
+
+</div>
+
+</div>
+
+
+</div>
+
+</div>
+
+
+<script>
+
+
+/* =====================================================
+   Supabase 配置
+===================================================== */
+
+const SUPABASE_URL =
+    "https://ljmpigyuctfecjdjblgv.supabase.co";
+
+
+const SUPABASE_PUBLISHABLE_KEY =
+    "sb_publishable_jkPys12DajdDTvTW7tMRyw_qGddc8OI";
+
+
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+    );
+
+
+/* ==================================
+   保存本次结果
+================================== */
+
+let currentResult = null;
+
+
+/* ==================================
+   显示保存状态
+================================== */
+
+function showSaveStatus(type, message) {
+
+    const status =
+        document.getElementById("saveStatus");
+
+    status.textContent =
+        message;
+
+    status.className =
+        "save-status " + type;
+
+    status.style.display =
+        "block";
+
+}
+
+
+/* ==================================
+   保存到 Supabase
+================================== */
+
+async function saveToSupabase(data) {
+
+    try {
+
+        const { error } =
+            await supabaseClient
+                .from("psqi_responses")
+                .insert(data);
+
+        if (error) {
+
+            console.error(
+                "Supabase上传失败：",
+                error
+            );
+
+            return {
+                success: false,
+                error: error
+            };
+
+        }
+
+        return {
+            success: true
+        };
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Supabase连接失败：",
+            error
+        );
+
+        return {
+            success: false,
+            error: error
+        };
+
+    }
+
+}
+
+
+/* ==================================
+   获取单选题数字分值
+================================== */
+
+function getRadioValue(name) {
+
+    const selected =
+        document.querySelector(
+            'input[name="' +
+            name +
+            '"]:checked'
+        );
+
+    if (selected) {
+
+        return Number(
+            selected.value
+        );
+
+    }
+
+    return null;
+
+}
+
+
+/* ==================================
+   获取单选题文字答案
+================================== */
+
+function getRadioText(name) {
+
+    const selected =
+        document.querySelector(
+            'input[name="' +
+            name +
+            '"]:checked'
+        );
+
+    if (!selected) {
+
+        return "";
+
+    }
+
+    return selected.parentElement.textContent.trim();
+
+}
+
+
+/* ==================================
+   计算卧床时间
+================================== */
+
+function calculateBedDuration(
+    bedTime,
+    wakeTime
+) {
+
+    const bed =
+        bedTime.split(":");
+
+    const wake =
+        wakeTime.split(":");
+
+
+    let bedMinutes =
+        Number(bed[0]) * 60 +
+        Number(bed[1]);
+
+
+    let wakeMinutes =
+        Number(wake[0]) * 60 +
+        Number(wake[1]);
+
+
+    if (wakeMinutes <= bedMinutes) {
+
+        wakeMinutes +=
+            24 * 60;
+
+    }
+
+
+    return wakeMinutes -
+        bedMinutes;
+
+}
+
+
+/* ==================================
+   C1
+================================== */
+
+function calculateC1() {
+
+    return getRadioValue("q6");
+
+}
+
+
+/* ==================================
+   C2
+================================== */
+
+function calculateC2(
+    sleepLatency,
+    q5a
+) {
+
+    let latencyScore;
+
+
+    if (sleepLatency <= 15) {
+
+        latencyScore = 0;
+
+    }
+
+    else if (sleepLatency <= 30) {
+
+        latencyScore = 1;
+
+    }
+
+    else if (sleepLatency <= 60) {
+
+        latencyScore = 2;
+
+    }
+
+    else {
+
+        latencyScore = 3;
+
+    }
+
+
+    const total =
+        latencyScore +
+        q5a;
+
+
+    if (total <= 1) {
+
+        return 0;
+
+    }
+
+    else if (total <= 3) {
+
+        return 1;
+
+    }
+
+    else if (total <= 5) {
+
+        return 2;
+
+    }
+
+    else {
+
+        return 3;
+
+    }
+
+}
+
+
+/* ==================================
+   C3
+================================== */
+
+function calculateC3(
+    sleepHours
+) {
+
+    if (sleepHours > 7) {
+
+        return 0;
+
+    }
+
+    else if (sleepHours >= 6) {
+
+        return 1;
+
+    }
+
+    else if (sleepHours >= 5) {
+
+        return 2;
+
+    }
+
+    else {
+
+        return 3;
+
+    }
+
+}
+
+
+/* ==================================
+   C4
+================================== */
+
+function calculateC4(
+    efficiency
+) {
+
+    if (efficiency >= 85) {
+
+        return 0;
+
+    }
+
+    else if (efficiency >= 75) {
+
+        return 1;
+
+    }
+
+    else if (efficiency >= 65) {
+
+        return 2;
+
+    }
+
+    else {
+
+        return 3;
+
+    }
+
+}
+
+
+/* ==================================
+   C5
+================================== */
+
+function calculateC5() {
+
+    const items = [
+
+        "q5b",
+        "q5c",
+        "q5d",
+        "q5e",
+        "q5f",
+        "q5g",
+        "q5h",
+        "q5i",
+        "q5jScore"
+
+    ];
+
+
+    let total = 0;
+
+
+    items.forEach(
+        function(name) {
+
+            const value =
+                getRadioValue(name);
+
+            if (value !== null) {
+
+                total += value;
+
+            }
+
+        }
+    );
+
+
+    if (total === 0) {
+
+        return 0;
+
+    }
+
+    else if (total <= 9) {
+
+        return 1;
+
+    }
+
+    else if (total <= 18) {
+
+        return 2;
+
+    }
+
+    else {
+
+        return 3;
+
+    }
+
+}
+
+
+/* ==================================
+   C6
+================================== */
+
+function calculateC6() {
+
+    return getRadioValue("q7");
+
+}
+
+
+/* ==================================
+   C7
+================================== */
+
+function calculateC7(
+    q8,
+    q9
+) {
+
+    const total =
+        q8 + q9;
+
+
+    if (total === 0) {
+
+        return 0;
+
+    }
+
+    else if (total <= 2) {
+
+        return 1;
+
+    }
+
+    else if (total <= 4) {
+
+        return 2;
+
+    }
+
+    else {
+
+        return 3;
+
+    }
+
+}
+
+
+/* =====================================================
+   提交问卷
+===================================================== */
+
+document
+.getElementById("questionnaire")
+.addEventListener(
+    "submit",
+    async function(event) {
+
+        event.preventDefault();
+
+
+        /* ==============================
+           防止重复点击
+        ============================== */
+
+        const submitButton =
+            document.getElementById(
+                "submitButton"
+            );
+
+
+        submitButton.disabled =
+            true;
+
+
+        submitButton.textContent =
+            "正在计算并保存，请稍候...";
+
+
+        /* ==============================
+           获取姓名
+        ============================== */
+
+        const name =
+            document
+                .getElementById("name")
+                .value
+                .trim();
+
+
+        if (!name) {
+
+            alert(
+                "请输入您的姓名。"
+            );
+
+
+            submitButton.disabled =
+                false;
+
+
+            submitButton.textContent =
+                "提交并计算得分";
+
+
+            return;
+
+        }
+
+
+        /* ==============================
+           获取前测 / 后测
+           
+           注意：
+           这里不能使用 getRadioValue()
+           因为 value 是 pre / post
+        ============================== */
+
+        const assessmentTypeElement =
+            document.querySelector(
+                'input[name="assessmentType"]:checked'
+            );
+
+
+        if (!assessmentTypeElement) {
+
+            alert(
+                "请选择本次问卷属于前测还是后测。"
+            );
+
+
+            submitButton.disabled =
+                false;
+
+
+            submitButton.textContent =
+                "提交并计算得分";
+
+
+            return;
+
+        }
+
+
+        const assessmentType =
+            assessmentTypeElement.value;
+
+
+        const assessmentTypeText =
+            assessmentType === "pre"
+                ? "前测"
+                : "后测";
+
+
+        /* ==============================
+           获取第1～4题
+        ============================== */
+
+        const bedTime =
+            document.getElementById(
+                "bedTime"
+            ).value;
+
+
+        const sleepLatency =
+            Number(
+                document.getElementById(
+                    "sleepLatency"
+                ).value
+            );
+
+
+        const wakeTime =
+            document.getElementById(
+                "wakeTime"
+            ).value;
+
+
+        const sleepHours =
+            Number(
+                document.getElementById(
+                    "sleepHours"
+                ).value
+            );
+
+
+        /* ==============================
+           获取5a
+        ============================== */
+
+        const q5a =
+            getRadioValue("q5a");
+
+
+        /* ==============================
+           获取8、9题
+        ============================== */
+
+        const q8 =
+            getRadioValue("q8");
+
+
+        const q9 =
+            getRadioValue("q9");
+
+
+        /* ==============================
+           检查输入
+        ============================== */
+
+        if (
+            !bedTime ||
+            !wakeTime ||
+            isNaN(sleepLatency) ||
+            isNaN(sleepHours) ||
+            q5a === null ||
+            q8 === null ||
+            q9 === null
+        ) {
+
+            alert(
+                "请完整填写问卷。"
+            );
+
+
+            submitButton.disabled =
+                false;
+
+
+            submitButton.textContent =
+                "提交并计算得分";
+
+
+            return;
+
+        }
+
+
+        /* ==============================
+           计算卧床时间
+        ============================== */
+
+        const bedMinutes =
+            calculateBedDuration(
+                bedTime,
+                wakeTime
+            );
+
+
+        if (bedMinutes <= 0) {
+
+            alert(
+                "请检查上床时间和起床时间。"
+            );
+
+
+            submitButton.disabled =
+                false;
+
+
+            submitButton.textContent =
+                "提交并计算得分";
+
+
+            return;
+
+        }
+
+
+        /* ==============================
+           计算卧床小时数
+        ============================== */
+
+        const bedHours =
+            bedMinutes / 60;
+
+
+        /* ==============================
+           计算睡眠效率
+        ============================== */
+
+        const efficiency =
+            sleepHours /
+            bedHours *
+            100;
+
+
+        if (sleepHours > bedHours) {
+
+            alert(
+                "实际睡眠时间不能超过卧床时间，请检查第1、3、4题。"
+            );
+
+
+            submitButton.disabled =
+                false;
+
+
+            submitButton.textContent =
+                "提交并计算得分";
+
+
+            return;
+
+        }
+
+
+        /* ==============================
+           计算C1～C7
+        ============================== */
+
+        const c1 =
+            calculateC1();
+
+
+        const c2 =
+            calculateC2(
+                sleepLatency,
+                q5a
+            );
+
+
+        const c3 =
+            calculateC3(
+                sleepHours
+            );
+
+
+        const c4 =
+            calculateC4(
+                efficiency
+            );
+
+
+        const c5 =
+            calculateC5();
+
+
+        const c6 =
+            calculateC6();
+
+
+        const c7 =
+            calculateC7(
+                q8,
+                q9
+            );
+
+
+        /* ==============================
+           检查C1～C7
+        ============================== */
+
+        if (
+            c1 === null ||
+            c6 === null
+        ) {
+
+            alert(
+                "请完整填写问卷。"
+            );
+
+
+            submitButton.disabled =
+                false;
+
+
+            submitButton.textContent =
+                "提交并计算得分";
+
+
+            return;
+
+        }
+
+
+        /* ==============================
+           计算总分
+        ============================== */
+
+        const totalScore =
+            c1 +
+            c2 +
+            c3 +
+            c4 +
+            c5 +
+            c6 +
+            c7;
+
+
+        /* ==============================
+           结果解释
+        ============================== */
+
+        let interpretation;
+
+
+        if (totalScore <= 5) {
+
+            interpretation =
+                "PSQI总分 ≤ 5分";
+
+        }
+
+        else {
+
+            interpretation =
+                "PSQI总分 > 5分";
+
+        }
+
+
+        /* ==============================
+           获取文字答案
+        ============================== */
+
+        const q5b =
+            getRadioText("q5b");
+
+
+        const q5c =
+            getRadioText("q5c");
+
+
+        const q5d =
+            getRadioText("q5d");
+
+
+        const q5e =
+            getRadioText("q5e");
+
+
+        const q5f =
+            getRadioText("q5f");
+
+
+        const q5g =
+            getRadioText("q5g");
+
+
+        const q5h =
+            getRadioText("q5h");
+
+
+        const q5i =
+            getRadioText("q5i");
+
+
+        const q5j =
+            document.getElementById(
+                "q5j"
+            ).value;
+
+
+        const q5jScore =
+            getRadioText(
+                "q5jScore"
+            );
+
+
+        const q6 =
+            getRadioText("q6");
+
+
+        const q7 =
+            getRadioText("q7");
+
+
+        const q8Text =
+            getRadioText("q8");
+
+
+        const q9Text =
+            getRadioText("q9");
+
+
+        /* ==============================
+           提交时间
+        ============================== */
+
+        const submitTime =
+            new Date().toLocaleString(
+                "zh-CN",
+                {
+                    timeZone:
+                        "Asia/Shanghai"
+                }
+            );
+
+
+        /* =====================================================
+           保存本次Excel结果
+        ===================================================== */
+
+        currentResult = {
+
+            "姓名":
+                name,
+
+            "测量时间点":
+                assessmentTypeText,
+
+            "提交时间":
+                submitTime,
+
+            "Q1 上床时间":
+                bedTime,
+
+            "Q2 入睡需要时间（分钟）":
+                sleepLatency,
+
+            "Q3 起床时间":
+                wakeTime,
+
+            "Q4 实际睡眠时间（小时）":
+                sleepHours,
+
+            "Q5a 入睡困难":
+                getRadioText("q5a"),
+
+            "Q5b 夜间易醒或早醒":
+                q5b,
+
+            "Q5c 夜间去厕所":
+                q5c,
+
+            "Q5d 呼吸不畅":
+                q5d,
+
+            "Q5e 咳嗽或鼾声高":
+                q5e,
+
+            "Q5f 感觉冷":
+                q5f,
+
+            "Q5g 感觉热":
+                q5g,
+
+            "Q5h 做恶梦":
+                q5h,
+
+            "Q5i 疼痛不适":
+                q5i,
+
+            "Q5j 其它影响睡眠的事情":
+                q5j,
+
+            "Q5j 发生频率":
+                q5jScore,
+
+            "Q6 主观睡眠质量":
+                q6,
+
+            "Q7 催眠药物":
+                q7,
+
+            "Q8 日间困倦":
+                q8Text,
+
+            "Q9 精力不足":
+                q9Text,
+
+            "卧床时间（小时）":
+                Number(
+                    bedHours.toFixed(2)
+                ),
+
+            "睡眠效率（%）":
+                Number(
+                    efficiency.toFixed(1)
+                ),
+
+            "C1 主观睡眠质量":
+                c1,
+
+            "C2 入睡时间":
+                c2,
+
+            "C3 睡眠时间":
+                c3,
+
+            "C4 睡眠效率":
+                c4,
+
+            "C5 睡眠障碍":
+                c5,
+
+            "C6 催眠药物":
+                c6,
+
+            "C7 日间功能障碍":
+                c7,
+
+            "PSQI总分":
+                totalScore
+
+        };
+
+
+        /* ==============================
+           显示结果
+        ============================== */
+
+        document
+        .getElementById("totalScore")
+        .textContent =
+            totalScore;
+
+
+        document
+        .getElementById("tableTotal")
+        .textContent =
+            totalScore;
+
+
+        document
+        .getElementById("interpretation")
+        .textContent =
+            interpretation;
+
+
+        document
+        .getElementById("c1")
+        .textContent =
+            c1;
+
+
+        document
+        .getElementById("c2")
+        .textContent =
+            c2;
+
+
+        document
+        .getElementById("c3")
+        .textContent =
+            c3;
+
+
+        document
+        .getElementById("c4")
+        .textContent =
+            c4;
+
+
+        document
+        .getElementById("c5")
+        .textContent =
+            c5;
+
+
+        document
+        .getElementById("c6")
+        .textContent =
+            c6;
+
+
+        document
+        .getElementById("c7")
+        .textContent =
+            c7;
+
+
+        /* ==============================
+           显示睡眠效率
+        ============================== */
+
+        document
+        .getElementById("efficiencyText")
+        .innerHTML =
+
+            "姓名：" +
+            name +
+            "<br>" +
+
+            "测量时间点：" +
+            assessmentTypeText +
+            "<br>" +
+
+            "卧床时间：" +
+            bedHours.toFixed(2) +
+            " 小时<br>" +
+
+            "实际睡眠时间：" +
+            sleepHours.toFixed(1) +
+            " 小时<br>" +
+
+            "睡眠效率：" +
+            efficiency.toFixed(1) +
+            "%";
+
+
+        /* ==============================
+           显示结果
+        ============================== */
+
+        document
+        .getElementById("result")
+        .style.display =
+            "block";
+
+
+        /* ==============================
+           显示正在保存
+        ============================== */
+
+        showSaveStatus(
+            "save-loading",
+            "正在将问卷结果保存到数据库……"
+        );
+
+
+        /* =====================================================
+           准备 Supabase 数据
+
+           这里是前后测功能最关键的部分
+           
+           name：
+           保存姓名
+
+           assessment_type：
+           保存 pre 或 post
+        ===================================================== */
+
+        const databaseData = {
+
+            name:
+                name,
+
+            assessment_type:
+                assessmentType,
+
+            q1:
+                bedTime,
+
+            q2:
+                sleepLatency,
+
+            q3:
+                wakeTime,
+
+            q4:
+                sleepHours,
+
+            q5a:
+                getRadioValue("q5a"),
+
+            q5b:
+                getRadioValue("q5b"),
+
+            q5c:
+                getRadioValue("q5c"),
+
+            q5d:
+                getRadioValue("q5d"),
+
+            q5e:
+                getRadioValue("q5e"),
+
+            q5f:
+                getRadioValue("q5f"),
+
+            q5g:
+                getRadioValue("q5g"),
+
+            q5h:
+                getRadioValue("q5h"),
+
+            q5i:
+                getRadioValue("q5i"),
+
+            q5j:
+                q5j,
+
+            q5j_score:
+                getRadioValue("q5jScore"),
+
+            q6:
+                getRadioValue("q6"),
+
+            q7:
+                getRadioValue("q7"),
+
+            q8:
+                q8,
+
+            q9:
+                q9,
+
+            bed_hours:
+                Number(
+                    bedHours.toFixed(2)
+                ),
+
+            efficiency:
+                Number(
+                    efficiency.toFixed(1)
+                ),
+
+            c1:
+                c1,
+
+            c2:
+                c2,
+
+            c3:
+                c3,
+
+            c4:
+                c4,
+
+            c5:
+                c5,
+
+            c6:
+                c6,
+
+            c7:
+                c7,
+
+            total_score:
+                totalScore
+
+        };
+
+
+        /* ==============================
+           上传到 Supabase
+        ============================== */
+
+        const saveResult =
+            await saveToSupabase(
+                databaseData
+            );
+
+
+        if (saveResult.success) {
+
+            showSaveStatus(
+                "save-success",
+                "✓ 本次问卷结果已成功保存到数据库"
+            );
+
+        }
+
+        else {
+
+            showSaveStatus(
+                "save-error",
+                "⚠ 本次结果计算成功，但数据库保存失败。请检查网络连接或Supabase设置。"
+            );
+
+        }
+
+
+        /* ==============================
+           恢复提交按钮
+        ============================== */
+
+        submitButton.disabled =
+            false;
+
+
+        submitButton.textContent =
+            "提交并计算得分";
+
+
+        /* ==============================
+           滚动到结果
+        ============================== */
+
+        document
+        .getElementById("result")
+        .scrollIntoView({
+
+            behavior:
+                "smooth"
+
+        });
+
+    }
+);
+
+
+/* =====================================================
+   导出Excel
+===================================================== */
+
+function exportExcel() {
+
+    if (!currentResult) {
+
+        alert(
+            "请先提交问卷并计算得分。"
+        );
+
+        return;
+
+    }
+
+
+    if (
+        typeof XLSX ===
+        "undefined"
+    ) {
+
+        alert(
+            "Excel导出功能加载失败，请检查网络连接后重新打开网页。"
+        );
+
+        return;
+
+    }
+
+
+    const data = [];
+
+
+    data.push([
+
+        "项目",
+
+        "答案 / 分数"
+
+    ]);
+
+
+    Object.keys(
+        currentResult
+    ).forEach(
+        function(key) {
+
+            data.push([
+
+                key,
+
+                currentResult[key]
+
+            ]);
+
+        }
+    );
+
+
+    const worksheet =
+        XLSX.utils.aoa_to_sheet(
+            data
+        );
+
+
+    const workbook =
+        XLSX.utils.book_new();
+
+
+    XLSX.utils.book_append_sheet(
+
+        workbook,
+
+        worksheet,
+
+        "PSQI结果"
+
+    );
+
+
+    worksheet["!cols"] = [
+
+        {
+            wch: 32
+        },
+
+        {
+            wch: 35
+        }
+
+    ];
+
+
+    const now =
+        new Date();
+
+
+    const fileName =
+
+        "PSQI睡眠问卷结果_" +
+
+        now.getFullYear() +
+
+        "-" +
+
+        String(
+            now.getMonth() + 1
+        ).padStart(2, "0") +
+
+        "-" +
+
+        String(
+            now.getDate()
+        ).padStart(2, "0") +
+
+        "_" +
+
+        String(
+            now.getHours()
+        ).padStart(2, "0") +
+
+        String(
+            now.getMinutes()
+        ).padStart(2, "0") +
+
+        ".xlsx";
+
+
+    XLSX.writeFile(
+
+        workbook,
+
+        fileName
+
+    );
+
+}
+
+
+/* =====================================================
+   重新填写
+===================================================== */
+
+function resetForm() {
+
+    document
+    .getElementById(
+        "questionnaire"
+    )
+    .reset();
+
+
+    currentResult =
+        null;
+
+
+    document
+    .getElementById(
+        "result"
+    )
+    .style.display =
+        "none";
+
+
+    document
+    .getElementById(
+        "saveStatus"
+    )
+    .style.display =
+        "none";
+
+
+    document
+    .getElementById(
+        "totalScore"
+    )
+    .textContent =
+        "0";
+
+
+    document
+    .getElementById(
+        "tableTotal"
+    )
+    .textContent =
+        "-";
+
+
+    document
+    .getElementById(
+        "c1"
+    )
+    .textContent =
+        "-";
+
+
+    document
+    .getElementById(
+        "c2"
+    )
+    .textContent =
+        "-";
+
+
+    document
+    .getElementById(
+        "c3"
+    )
+    .textContent =
+        "-";
+
+
+    document
+    .getElementById(
+        "c4"
+    )
+    .textContent =
+        "-";
+
+
+    document
+    .getElementById(
+        "c5"
+    )
+    .textContent =
+        "-";
+
+
+    document
+    .getElementById(
+        "c6"
+    )
+    .textContent =
+        "-";
+
+
+    document
+    .getElementById(
+        "c7"
+    )
+    .textContent =
+        "-";
+
+
+    window.scrollTo({
+
+        top: 0,
+
+        behavior: "smooth"
+
+    });
+
+}
+
+</script>
+
+
+</body>
+
+</html>
